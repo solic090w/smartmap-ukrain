@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SmartMap Ukraine — Проблеми руху у всіх областях</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    body { margin:0; font-family:Segoe UI, Roboto, Arial; background:#eef2f3; }
+    #map { height:100vh; width:100%; }
+    .info-panel {
+      position:absolute; top:10px; left:10px;
+      background:rgba(255,255,255,0.95);
+      padding:12px 16px; border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      max-width:280px; font-size:14px;
+    }
+    h2 { margin:0 0 8px; font-size:18px; }
+    .legend { margin-top:8px; line-height:1.4em; }
+    .legend span {
+      display:inline-block; width:14px; height:14px; border-radius:50%;
+      margin-right:5px; vertical-align:middle;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="info-panel">
+    <h2>SmartMap Ukraine 2.0</h2>
+    <p>Найпоширеніші проблеми руху у всіх областях України: затори, ремонти, аварії.</p>
+    <div class="legend">
+      <div><span style="background:red;"></span>ДТП / аварія</div>
+      <div><span style="background:orange;"></span>Ремонт дороги</div>
+      <div><span style="background:yellow;"></span>Затор / трафік</div>
+      <div><span style="background:green;"></span>Рух нормальний</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([49.0, 31.5], 6); // Центр України
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom:18,
+      attribution:'&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Дані про основні області
+    const issues = [
+      // Захід
+      { city:"Львів", coords:[49.8397,24.0297], color:"yellow", name:"Затор у центрі міста", desc:"Великий потік транспорту біля Оперного театру." },
+      { city:"Ужгород", coords:[48.6208,22.2879], color:"orange", name:"Ремонт мосту через Уж", desc:"Рух частково перекритий." },
+      { city:"Івано-Франківськ", coords:[48.9226,24.7111], color:"green", name:"Рух нормальний", desc:"Без затримок." },
+      { city:"Тернопіль", coords:[49.5535,25.5948], color:"yellow", name:"Затор біля центрального ринку", desc:"Щільний рух у години пік." },
+      { city:"Луцьк", coords:[50.7472,25.3254], color:"orange", name:"Ремонт дороги на вулиці Володимирській", desc:"Тимчасове перекриття смуги." },
+      { city:"Чернівці", coords:[48.2915,25.9403], color:"orange", name:"Ремонт Героїв Майдану", desc:"Обмеження руху транспорту." },
+      { city:"Рівне", coords:[50.6199,26.2516], color:"yellow", name:"Затор на Соборній", desc:"Щільний рух у центрі." },
+
+      // Центр
+      { city:"Київ", coords:[50.4501,30.5234], color:"red", name:"ДТП на Хрещатику", desc:"Зіткнення авто, затори в центрі." },
+      { city:"Черкаси", coords:[49.4444,32.0598], color:"orange", name:"Ремонт мосту через Дніпро", desc:"Рух однією смугою." },
+      { city:"Полтава", coords:[49.5883,34.5514], color:"yellow", name:"Затор на Європейській", desc:"Тимчасові уповільнення." },
+      { city:"Вінниця", coords:[49.2331,28.4682], color:"green", name:"Рух нормальний", desc:"Без суттєвих затримок." },
+      { city:"Кропивницький", coords:[48.5079,32.2623], color:"orange", name:"Ремонт центральної дороги", desc:"Обмежено рух транспорту." },
+      { city:"Житомир", coords:[50.2547,28.6578], color:"yellow", name:"Затор на Київській", desc:"Рух сповільнено." },
+
+      // Схід
+      { city:"Харків", coords:[49.9935,36.2304], color:"orange", name:"Ремонт Московського проспекту", desc:"Обмежено рух через дорожні роботи." },
+      { city:"Суми", coords:[50.9077,34.7981], color:"green", name:"Рух нормальний", desc:"Без заторів." },
+      { city:"Дніпро", coords:[48.4647,35.0462], color:"red", name:"ДТП на Центральному мосту", desc:"Перекрито 2 смуги." },
+      { city:"Донецьк (тимчасово окупований)", coords:[48.0159,37.8029], color:"red", name:"Проблеми з рухом", desc:"Обмежений доступ до міста." },
+      { city:"Луганськ (тимчасово окупований)", coords:[48.5740,39.3078], color:"red", name:"Обмежений рух", desc:"Недоступні дороги." },
+      { city:"Запоріжжя", coords:[47.8388,35.1396], color:"orange", name:"Ремонт мосту через Дніпро", desc:"Рух ускладнений." },
+
+      // Південь
+      { city:"Одеса", coords:[46.4825,30.7233], color:"yellow", name:"Затор біля Аркадії", desc:"Щільний трафік у години пік." },
+      { city:"Миколаїв", coords:[46.9750,31.9946], color:"orange", name:"Ремонт Південного мосту", desc:"Рух обмежено." },
+      { city:"Херсон", coords:[46.6354,32.6169], color:"yellow", name:"Тимчасові обмеження", desc:"Щільний рух у центрі." },
+      { city:"Сімферополь (окуп.)", coords:[44.9521,34.1024], color:"red", name:"Обмеження руху", desc:"Недоступна інформація." },
+
+      // Північ
+      { city:"Чернігів", coords:[51.4982,31.2893], color:"yellow", name:"Затор у центрі", desc:"Трафік у години пік." },
+      { city:"Суми", coords:[50.9077,34.7981], color:"green", name:"Рух нормальний", desc:"Без затримок." }
+    ];
+
+    // Додаємо маркери
+    issues.forEach(issue => {
+      L.circleMarker(issue.coords, {
+        radius:9,
+        color:issue.color,
+        fillColor:issue.color,
+        fillOpacity:0.7
+      })
+      .bindPopup(`<b>${issue.city}</b><br>${issue.name}<br>${issue.desc}`)
+      .addTo(map);
+    });
+  </script>
+</body>
+</html>
